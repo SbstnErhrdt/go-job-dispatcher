@@ -1,9 +1,25 @@
+# syntax=docker/dockerfile:1
+
+### build go app
+FROM golang:1.16-alpine as go
+WORKDIR /app
+COPY * ./
+RUN go mod download
+RUN go build -o main
+
+
+### get certs
 FROM alpine:latest as certs
 RUN apk --update add ca-certificates
 
+
+### combine all
 FROM scratch
 ENV PATH=/bin
+# copy certs
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-
-ADD main /
+# copy go app
+WORKDIR /app
+COPY --from=go /app /app
+# start app
 CMD ["/main"]
