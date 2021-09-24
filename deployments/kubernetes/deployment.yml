@@ -1,0 +1,165 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: go-job-dispatcher
+---
+apiVersion: apps/v1
+kind: Deployment # Type of Kubernetes resource
+metadata:
+  name: go-job-dispatcher-deployment # Name of the Kubernetes resource
+  namespace: go-job-dispatcher # Name of the Kubernetes namespace
+  labels:
+    app: go-job-dispatcher
+spec:
+  replicas: 3 # Number of pods to run at any given time
+  selector:
+    matchLabels:
+      app: go-job-dispatcher # This deployment applies to any Pods matching the specified label
+  template: # This deployment will create a set of pods using the configurations in this template
+    metadata:
+      labels: # The labels that will be applied to all of the pods in this deployment
+        app: go-job-dispatcher
+    spec: # Spec for the container which will run in the Pod
+      imagePullSecrets:
+        - name: go-registry
+      containers:
+        - name: go-job-dispatcher
+          image: registry.url.com/job_dispatcher:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: go-job-dispatcher-env-secret
+          ports:
+            - containerPort: 8080  # Should match the port number that the Go application listens on
+          livenessProbe: # To check the health of the Pod
+            httpGet:
+              path: /liveness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe: # To check if the Pod is ready to serve traffic or not
+            httpGet:
+              path: /readiness
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 20
+            timeoutSeconds: 1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-job-dispatcher-service # Name of the Kubernetes service
+  namespace: go-job-dispatcher # Name of the Kubernetes namespace
+  labels:
+    app: go-job-dispatcher
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: go-job-dispatcher # link to the deployment
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: go-job-dispatcher-ingress
+  namespace: go-job-dispatcher # Name of the Kubernetes namespace
+  labels:
+    app: go-job-dispatcher
+spec:
+  tls:
+    - hosts:
+        - job-dispatcher.url.com # todo: change
+      secretName: go-tls
+  rules:
+    - host: job-dispatcher.url.com # todo: change
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: go-job-dispatcher-service
+                port:
+                  number: 8080
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: go-job-dispatcher-redis
+  namespace: go-job-dispatcher
+spec:
+  serviceName: "redis"
+  selector:
+    matchLabels:
+      app: go-job-dispatcher-redis
+  updateStrategy:
+    type: RollingUpdate
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: go-job-dispatcher-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis
+          resources:
+            limits:
+              memory: 10Gi # TODO: change according to your needs
+          ports:
+            - containerPort: 6379
+          volumeMounts:
+            - name: redis-data
+              mountPath: /usr/share/redis
+  volumeClaimTemplates:  # this will be used to create PVC
+    - metadata:
+        name: redis-data
+        namespace: go-job-dispatcher
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: local-storage
+        selector:
+          matchLabels:
+            redis-node-type: data
+---
+apiVersion: v1
+kind: Service        # Type of Kubernetes resource
+metadata:
+  name: go-job-dispatcher-redis-master # Name of the Kubernetes resource
+  namespace: go-job-dispatcher
+  labels:            # Labels that will be applied to this resource
+    app: go-job-dispatcher-redis
+spec:
+  ports:
+    - port: 6379       # Map incoming connections on port 6379 to the target port 6379 of the Pod
+      targetPort: 6379
+  selector:          # Map any Pod with the specified labels to this service
+    app: go-job-dispatcher-redis
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-storage-job-dispatcher-redis-data-0
+  namespace: go-job-dispatcher
+  labels:
+    type: local
+    redis-node-type: data
+spec:
+  storageClassName: local-storage
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/home/job-dispatcher-data/redis/data/0"
