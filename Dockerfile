@@ -2,8 +2,10 @@
 
 ### build go app
 FROM golang:1.16-alpine as go
+RUN apk add --no-cache gcc musl-dev
+
 WORKDIR /app
-COPY * ./
+COPY . ./
 RUN go mod download
 RUN go build -o main
 
@@ -22,4 +24,4 @@ COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifica
 WORKDIR /app
 COPY --from=go /app /app
 # start app
-CMD ["/main"]
+CMD ["./main"]
