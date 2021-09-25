@@ -14,6 +14,11 @@ Work in progress
 * Priority
 * Multi-Instance Jobs
 
+## Dependencies
+
+* SQL
+* Redis
+
 # Environment Variables
 
 ```
@@ -125,6 +130,12 @@ _ := client.MarkCurrentJobAsCompleted()
 ```
 
 # Deployment
+
+Via docker
+````shell
+docker run -p 8080:8080 ese7en/go-job-dispatcher
+````
+
 
 * [Kubernetes](deployments/kubernetes)
 * [Docker-Compose](deployments/kubernetes)

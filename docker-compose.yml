@@ -12,7 +12,7 @@ services:
     container_name: job_dispatcher_mysql_test
     restart: always
     ports:
-      - 3306:3306
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD}
       MYSQL_DATABASE: ${SQL_DATABASE}

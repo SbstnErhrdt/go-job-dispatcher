@@ -1,0 +1,49 @@
+version: '3.7'
+services:
+  redis:
+    image: redis:latest
+    container_name: job_dispatcher_redis
+    hostname: redis
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+  mysql:
+    image: mysql:latest
+    container_name: job_dispatcher_mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD}
+      MYSQL_DATABASE: ${SQL_DATABASE}
+      MYSQL_USER: ${SQL_USER}
+      MYSQL_PASSWORD: ${SQL_PASSWORD}
+    networks:
+      - job_dispatcher_network
+  dispatcher:
+    image: ese7en/go-job-dispatcher:latest
+    container_name: job_dispatcher
+    hostname: queue
+    ports:
+      - "8080:8080"
+    environment:
+      SQL_TYPE: MYSQL
+      MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD}
+      MYSQL_DATABASE: ${SQL_DATABASE}
+      MYSQL_USER: ${SQL_USER}
+      MYSQL_PASSWORD: ${SQL_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DATABASE: ${REDIS_DATABASE}
+      CLEAN_STALLED_JOBS_INTERVAL: 5 MINUTE
+      JOB_DISPATCHER_REDIS_PREFIX: job_dispatcher
+    networks:
+      - job_dispatcher_network
+    depends_on:
+      - redis
+      - mysql
+
+networks:
+  job_dispatcher_network:
+    driver: bridge
