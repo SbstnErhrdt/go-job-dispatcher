@@ -1,23 +1,18 @@
 # syntax=docker/dockerfile:1
 
-### build go app
-FROM golang:1.16-alpine as go
-RUN apk add --no-cache gcc musl-dev
-WORKDIR /app
-COPY . ./
-# set env
-RUN export CGO_ENABLED=0
-RUN export GOOS=linux
-RUN export GOARCH=amd64
-# download and build
-RUN go mod download
-RUN go build -o main
-
-
 ### get certs
 FROM alpine:latest as certs
 RUN apk --update add ca-certificates
 
+### build go app
+FROM golang:1.16-alpine as builder
+RUN apk add --no-cache gcc musl-dev
+RUN mkdir /build
+WORKDIR /build
+COPY . ./
+# download and build
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o main .
 
 ### combine all
 FROM scratch
@@ -25,7 +20,9 @@ ENV PATH=/bin
 # copy certs
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 # copy go app
-WORKDIR /app
-COPY --from=go /app /app
+COPY --from=builder /build .
 # start app
-CMD ["./main"]
+# executable
+ENTRYPOINT [ "./main" ]
+# arguments that can be overridden
+CMD [ "" ]
