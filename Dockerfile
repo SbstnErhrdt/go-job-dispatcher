@@ -3,9 +3,10 @@
 ### build go app
 FROM golang:1.16-alpine as go
 RUN apk add --no-cache gcc musl-dev
-
 WORKDIR /app
 COPY . ./
+# set bin
+RUN export CGO_ENABLED=0
 RUN go mod download
 RUN go build -o main
 
