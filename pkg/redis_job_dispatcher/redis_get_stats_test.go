@@ -5,8 +5,8 @@ import (
 	"github.com/SbstnErhrdt/go-job-dispatcher/connections"
 	"github.com/SbstnErhrdt/go-job-dispatcher/pkg/job_dispatcher"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"testing"
 )
 

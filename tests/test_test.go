@@ -7,7 +7,7 @@ import (
 	"github.com/SbstnErhrdt/go-job-dispatcher/scripts/migrations"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http/httptest"
 	"os"
 	"testing"

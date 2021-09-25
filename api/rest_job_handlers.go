@@ -7,7 +7,7 @@ import (
 	"github.com/SbstnErhrdt/go-job-dispatcher/pkg/sql_job_dispatcher"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 func getService(c *gin.Context) job_dispatcher.JobService {

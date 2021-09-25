@@ -28,12 +28,13 @@ services:
       - "8080:8080"
     environment:
       SQL_TYPE: MYSQL
-      MYSQL_ROOT_PASSWORD: ${SQL_PASSWORD}
-      MYSQL_DATABASE: ${SQL_DATABASE}
-      MYSQL_USER: ${SQL_USER}
-      MYSQL_PASSWORD: ${SQL_PASSWORD}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
+      SQL_HOST: job_dispatcher_mysql
+      SQL_PORT: 3306
+      SQL_PASSWORD: ${SQL_PASSWORD}
+      SQL_DATABASE: ${SQL_DATABASE}
+      SQL_USER: ${SQL_USER}
+      REDIS_HOST: job_dispatcher_redis
+      REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_DATABASE: ${REDIS_DATABASE}
       CLEAN_STALLED_JOBS_INTERVAL: 5 MINUTE
@@ -43,6 +44,7 @@ services:
     depends_on:
       - redis
       - mysql
+    restart: on-failure
 
 networks:
   job_dispatcher_network:

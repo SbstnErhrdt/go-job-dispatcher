@@ -3,7 +3,7 @@ package migrations
 import (
 	"github.com/SbstnErhrdt/go-job-dispatcher/connections"
 	"github.com/SbstnErhrdt/go-job-dispatcher/pkg/job_dispatcher"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 func Run() {

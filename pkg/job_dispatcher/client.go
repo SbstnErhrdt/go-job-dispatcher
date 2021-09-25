@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 )
 

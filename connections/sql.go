@@ -3,8 +3,8 @@ package connections
 import (
 	"github.com/SbstnErhrdt/env"
 	"github.com/SbstnErhrdt/go-gorm-all-sql/pkg/sql"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	"log"
 )
 
 var SQLClient *gorm.DB
@@ -20,31 +20,29 @@ func ConnectToSQL() {
 		"SQL_PORT",
 		"SQL_DATABASE",
 	)
-	log.Println("Try to connect to sql database")
+	log.Println("try to connect to sql database")
 	client, err := sql.ConnectToDatabase()
 	if err != nil {
-		log.Println("Failed to connected to sql database")
-		panic(err)
+		log.Fatal("failed to connected to sql database")
 		return
 	}
 	SQLClient = client
-	log.Println("Successfully connected to sql database")
+	log.Info("successfully connected to sql database")
 	return
 }
 
+// CloseSQLConnection closes the connection to sql
 func CloseSQLConnection() {
-	log.Println("Try to close connection to sql database")
+	log.Println("try to close connection to sql database")
 	db, err := SQLClient.DB()
 	if err != nil {
-		log.Println("Failed to get sql db")
-		panic(err)
+		log.Fatal("failed to get sql db")
 		return
 	}
 	err = db.Close()
 	if err != nil {
-		log.Println("Failed to close connection")
-		panic(err)
+		log.Fatal("failed to close connection")
 		return
 	}
-	log.Println("Successfully closed connection")
+	log.Info("successfully closed connection")
 }

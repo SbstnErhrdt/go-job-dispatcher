@@ -4,7 +4,7 @@ import (
 	"github.com/SbstnErhrdt/go-job-dispatcher/pkg/redis_job_dispatcher"
 	"github.com/SbstnErhrdt/go-job-dispatcher/pkg/sql_job_dispatcher"
 	"github.com/gin-gonic/gin"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 func InitServer() {

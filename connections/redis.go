@@ -4,13 +4,14 @@ import (
 	"context"
 	"github.com/SbstnErhrdt/env"
 	"github.com/go-redis/redis/v8"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strconv"
 )
 
 var RedisClient *redis.Client
 
+// ConnectToRedis creates a new connection to redis
 func ConnectToRedis() {
 	// check if the necessary sql variables are set
 	env.CheckRequiredEnvironmentVariables(
@@ -22,11 +23,11 @@ func ConnectToRedis() {
 	env.CheckOptionalEnvironmentVariables(
 		"REDIS_PASSWORD",
 	)
-	log.Println("Try to connect to sql redis")
+	log.Info("try to connect to redis")
 	db, err := strconv.Atoi(os.Getenv("REDIS_DATABASE"))
 	if err != nil {
-		log.Println("Failed to convert the provided redis db in the environment variable REDIS_DATABASE to an integer")
-		panic(err)
+		log.Println("failed to convert the provided redis db in the environment variable REDIS_DATABASE to an integer")
+		log.Fatal(err)
 		return
 	}
 	client := redis.NewClient(&redis.Options{
@@ -37,17 +38,18 @@ func ConnectToRedis() {
 	RedisClient = client
 	res := RedisClient.Ping(context.TODO())
 	if res.Err() != nil {
-		panic(res.Err())
+		log.Fatal(res.Err())
 		return
 	}
-	log.Println("Successfully connected to redis database")
+	log.Info("successfully connected to redis database")
 	return
 }
 
+// CloseRedisConnection closes a connection
 func CloseRedisConnection() {
 	err := RedisClient.Close()
 	if err != nil {
-		log.Println("Failed to close redis connection")
+		log.Error("failed to close redis connection")
 		panic(err)
 		return
 	}
