@@ -2,3 +2,4 @@
 *.env*
 main
 .DS_Store
+.gitignore
