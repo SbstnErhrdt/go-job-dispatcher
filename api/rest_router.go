@@ -19,6 +19,7 @@ func InitBackgroundJobs() {
 	sql := sql_job_dispatcher.SqlService{}
 	redis := redis_job_dispatcher.RedisService{}
 	for {
+		log.Info("clean up expired jobs")
 		errSQL := sql.Clean()
 		if errSQL != nil {
 			log.Fatal("can not clean sql ", errSQL)
