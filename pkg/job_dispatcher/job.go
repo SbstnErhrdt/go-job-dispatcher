@@ -8,15 +8,15 @@ import (
 )
 
 type Job struct {
-	UUID uuid.UUID `json:"uuid"`
+	UUID uuid.UUID `json:"uuid" gorm:"primaryKey"`
 	// Metadata
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 	DeletedAt *time.Time `json:"deletedAt"`
 	// UUIDs
-	MandateUID uuid.UUID `json:"mandateUID"`
-	ClientUID  uuid.UUID `json:"clientUID"`
-	OwnerUID   uuid.UUID `json:"ownerUID"`
+	MandateUID uuid.UUID `json:"mandateUID" gorm:"index"`
+	ClientUID  uuid.UUID `json:"clientUID" gorm:"index"`
+	OwnerUID   uuid.UUID `json:"ownerUID" gorm:"index"`
 	// Attributes
 	StartedAt         *time.Time             `json:"startedAt"`                                                     // the timestamp when the worker started on this job
 	CompletedAt       *time.Time             `json:"completedAt" gorm:"index"`                                      // the timestamp when the worker finished the job
