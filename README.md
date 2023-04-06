@@ -111,7 +111,7 @@ client := job_dispatcher.NewClient(
     uid,
 )
 // get the latest job from the queue
-err := client.GetJob(bot.GetAdditionalInstanceTypes())
+err := client.GetJob("job-type")
 if err != nil {
     return
 }

@@ -12,6 +12,7 @@ import (
 func GetStalledJobs() (stalledJobs []uuid.UUID, err error) {
 	instances, err := GetInstances()
 	if err != nil {
+		log.WithError(err).Error("Could not get instances")
 		return
 	}
 	// iterate over all instances

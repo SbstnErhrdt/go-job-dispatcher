@@ -15,7 +15,7 @@ func InitServer() {
 }
 
 func InitServerEngine() (r *gin.Engine) {
-	log.Println("Try to init router")
+	log.Info("Try to init router")
 	// init router
 	r = gin.Default()
 	// add the cors middleware
@@ -65,6 +65,6 @@ func InitServerEngine() (r *gin.Engine) {
 		// Stats
 		bulkJobs.GET("/stats", ReadStatsJobHandler)
 	}
-	log.Println("Router successfully initialize")
+	log.Info("Router successfully initialize")
 	return
 }

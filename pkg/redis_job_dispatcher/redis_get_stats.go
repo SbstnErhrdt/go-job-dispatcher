@@ -5,6 +5,7 @@ import (
 	"github.com/SbstnErhrdt/go-job-dispatcher/connections"
 	"github.com/SbstnErhrdt/go-job-dispatcher/pkg/job_dispatcher"
 	"github.com/go-redis/redis/v8"
+	log "github.com/sirupsen/logrus"
 	"strings"
 )
 
@@ -13,9 +14,14 @@ func GetKeys() (results []string, err error) {
 	resCMD := connections.RedisClient.Keys(context.TODO(), "*")
 	if resCMD.Err() != nil {
 		err = resCMD.Err()
+		log.WithError(err).Error("Could not get keys from redis")
 		return
 	}
 	results, err = resCMD.Result()
+	if err != nil {
+		log.WithError(err).Error("Could not get keys from redis")
+		return
+	}
 	return
 }
 
@@ -24,6 +30,7 @@ func GetStats() (results []job_dispatcher.Stats, err error) {
 	stats := map[string]*job_dispatcher.Stats{}
 	keys, err := GetKeys()
 	if err != nil {
+		log.WithError(err).Error("Could not get keys from redis")
 		return
 	}
 	// start tx
@@ -59,6 +66,7 @@ func GetStats() (results []job_dispatcher.Stats, err error) {
 	// execute tx
 	resCMD, err := tx.Exec(context.TODO())
 	if err != nil {
+		log.WithError(err).Error("Could not get stats from redis")
 		return
 	}
 
@@ -115,7 +123,7 @@ func GetInstances() (result []string, err error) {
 	}
 	// generate the array from the map
 	result = []string{}
-	for k, _ := range res {
+	for k := range res {
 		result = append(result, k)
 	}
 	return

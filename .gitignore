@@ -2,3 +2,5 @@
 *.env*
 main
 .DS_Store
+.gitignore
+build.sh

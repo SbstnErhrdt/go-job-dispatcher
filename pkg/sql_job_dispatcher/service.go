@@ -138,7 +138,7 @@ func (m *SqlService) GetLatestJob(workerInstances []string,
 	}
 	// if there is still no job
 	if !found {
-		err = job_dispatcher.NoNewJobs
+		err = job_dispatcher.ErrNoNewJobs
 		return
 	}
 	return

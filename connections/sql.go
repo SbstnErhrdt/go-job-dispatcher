@@ -20,29 +20,31 @@ func ConnectToSQL() {
 		"SQL_PORT",
 		"SQL_DATABASE",
 	)
-	log.Println("try to connect to sql database")
+	log.Info("Try to connect to sql database")
 	client, err := sql.ConnectToDatabase()
 	if err != nil {
-		log.Fatal("failed to connected to sql database")
+		log.WithError(err).Error("Failed to connected to sql database")
 		return
 	}
 	SQLClient = client
-	log.Info("successfully connected to sql database")
+	log.Println("Successfully connected to sql database")
 	return
 }
 
-// CloseSQLConnection closes the connection to sql
 func CloseSQLConnection() {
-	log.Println("try to close connection to sql database")
+	log.Info("Try to close connection to sql database")
 	db, err := SQLClient.DB()
 	if err != nil {
-		log.Fatal("failed to get sql db")
+
+		log.WithError(err).Error("Failed to get sql db")
+		panic(err)
 		return
 	}
 	err = db.Close()
 	if err != nil {
-		log.Fatal("failed to close connection")
+		log.WithError(err).Error("Failed to close connection")
+		panic(err)
 		return
 	}
-	log.Info("successfully closed connection")
+	log.Info("Successfully closed connection")
 }

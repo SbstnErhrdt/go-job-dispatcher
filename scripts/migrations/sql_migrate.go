@@ -7,7 +7,7 @@ import (
 )
 
 func Run() {
-	log.Println("Try to migrate")
+	log.Info("Try to migrate")
 	// Init the connections to the databases
 	connections.ConnectToSQL()
 	// Create the tables in the database
@@ -15,7 +15,8 @@ func Run() {
 		&job_dispatcher.Job{},
 	)
 	if err != nil {
-		log.Print("Could not migrate", err)
+		log.WithError(err).Error("Could not migrate the database")
+		return
 	}
-	log.Println("Migration successful")
+	log.Info("Migration successful")
 }

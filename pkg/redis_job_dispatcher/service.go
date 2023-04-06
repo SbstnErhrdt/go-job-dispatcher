@@ -20,6 +20,7 @@ func (m *RedisService) New(job *job_dispatcher.Job) (err error) {
 	// job to json
 	jobBytes, err := json.Marshal(job)
 	if err != nil {
+		log.WithError(err).Error("Could not marshal job")
 		return err
 	}
 	// init transaction
@@ -32,6 +33,9 @@ func (m *RedisService) New(job *job_dispatcher.Job) (err error) {
 	tx.LPush(ctx, GenerateKeyTodoQueue(job.WorkerInstance), job.UUID.String())
 	// execute the transaction
 	_, err = tx.Exec(ctx)
+	if err != nil {
+		log.WithError(err).Error("Could not create job")
+	}
 	return err
 }
 
@@ -43,6 +47,7 @@ func (m *RedisService) BulkNew(newJobs []*job_dispatcher.Job) (err error) {
 		jobBytes, errMarshal := json.Marshal(j)
 		if errMarshal != nil {
 			err = errMarshal
+			log.WithError(err).Error("Could not marshal job")
 			return
 		}
 		// create the job in the global list
@@ -55,6 +60,7 @@ func (m *RedisService) BulkNew(newJobs []*job_dispatcher.Job) (err error) {
 	// execute the transaction
 	_, err = tx.Exec(context.TODO())
 	if err != nil {
+		log.WithError(err).Error("Could not create job")
 		return
 	}
 	return
@@ -65,10 +71,12 @@ func ParseJob(cmd *redis.StringCmd) (job job_dispatcher.Job, err error) {
 	var resString string
 	err = cmd.Scan(&resString)
 	if err != nil {
+		log.WithError(err).Error("Could not scan job from redis")
 		return
 	}
 	err = json.Unmarshal([]byte(resString), &job)
 	if err != nil {
+		log.WithError(err).Error("Could not unmarshal job from redis")
 		return
 	}
 	return
@@ -79,6 +87,7 @@ func (m *RedisService) GetJobByUUID(uid uuid.UUID) (result *job_dispatcher.Job, 
 	resCMD := connections.RedisClient.HGet(context.TODO(), GenerateKeyJobsMap(), uid.String())
 	job, err := ParseJob(resCMD)
 	if err != nil {
+		log.WithError(err).Error("Could not parse job")
 		return
 	}
 	result = &job
@@ -97,6 +106,7 @@ func (m *RedisService) setJobActive(job *job_dispatcher.Job) (err error) {
 	// save job to json
 	jobBytes, err := json.Marshal(job)
 	if err != nil {
+		log.WithError(err).Error("Could not marshal job")
 		return err
 	}
 	tx.HMSet(
@@ -107,6 +117,9 @@ func (m *RedisService) setJobActive(job *job_dispatcher.Job) (err error) {
 	)
 	// execute the transaction
 	_, err = tx.Exec(context.TODO())
+	if err != nil {
+		log.WithError(err).Error("Could not set job active")
+	}
 	return
 }
 
@@ -160,6 +173,7 @@ func (m *RedisService) Release(job *job_dispatcher.Job) (err error) {
 	// transform job to json
 	jobBytes, err := json.Marshal(job)
 	if err != nil {
+		log.WithError(err)
 		return err
 	}
 	tx.HMSet(
@@ -170,6 +184,9 @@ func (m *RedisService) Release(job *job_dispatcher.Job) (err error) {
 	)
 	// execute the transaction
 	_, err = tx.Exec(context.TODO())
+	if err != nil {
+		log.WithError(err).Error("Could not release job")
+	}
 	return
 }
 
@@ -191,6 +208,7 @@ func (m *RedisService) Complete(job *job_dispatcher.Job) (err error) {
 	// job to json
 	jobBytes, err := json.Marshal(job)
 	if err != nil {
+		log.WithError(err).Error("Could not marshal job")
 		return err
 	}
 	tx.HMSet(
@@ -201,6 +219,9 @@ func (m *RedisService) Complete(job *job_dispatcher.Job) (err error) {
 	)
 	// execute the transaction
 	_, err = tx.Exec(context.TODO())
+	if err != nil {
+		log.WithError(err).Error("Could not complete job")
+	}
 	return
 }
 
@@ -221,28 +242,32 @@ func (m *RedisService) GetLatestJob(workerInstances []string, workerUUID uuid.UU
 		errScan := res.Scan(&jobUIDString)
 		if errScan != nil {
 			err = errScan
+			log.WithError(err).Error("Could not scan job uid string")
 			return
 		} else {
 			break
 		}
 	}
 	if len(jobUIDString) == 0 {
-		err = job_dispatcher.NoNewJobs
+		err = job_dispatcher.ErrNoNewJobs
 		return nil, err
 	}
 	// return the job
 	jobUID, err := uuid.Parse(jobUIDString)
 	if err != nil {
+		log.WithError(err).Error("Could not parse job uid")
 		return
 	}
 	// map the worker with the uuid
 	err = m.MapWorker(workerUUID, jobUID)
 	if err != nil {
+		log.WithError(err).Error("Could not map worker with job")
 		return
 	}
 	// get the job
 	job, err = m.GetJobByUUID(jobUID)
 	if err != nil {
+		log.WithError(err).Error("Could not get job by uuid")
 		return
 	}
 	// increment the attempts
@@ -250,6 +275,7 @@ func (m *RedisService) GetLatestJob(workerInstances []string, workerUUID uuid.UU
 	// save the job
 	err = m.SaveJob(job)
 	if err != nil {
+		log.WithError(err).Error("Could not save job")
 		return
 	}
 	return
@@ -268,6 +294,7 @@ func (m *RedisService) GetCurrentJobOfWorker(
 	}
 	job, err = m.GetJobByUUID(jobUId)
 	if err != nil {
+		log.WithError(err).Error("Could not get job by uuid")
 		return
 	}
 	found = true
@@ -283,6 +310,7 @@ func (m *RedisService) GetCurrentJobOfWorker(
 func (m *RedisService) Clean() error {
 	stalledJobUIDs, err := GetStalledJobs()
 	if err != nil {
+		log.WithError(err).Error("Could not get stalled jobs")
 		return err
 	}
 	for _, jobUID := range stalledJobUIDs {
@@ -312,12 +340,19 @@ func (m *RedisService) SaveJob(job *job_dispatcher.Job) (err error) {
 	// job to json
 	jobBytes, err := json.Marshal(job)
 	if err != nil {
+		log.WithError(err).Error("Could not marshal job")
 		return err
 	}
 	// create the job in the global list
 	resCMD := connections.RedisClient.HMSet(context.TODO(), GenerateKeyJobsMap(), job.UUID.String(), string(jobBytes))
 	if err != nil {
+		log.WithError(err).Error("Could not save job")
 		return
 	}
-	return resCMD.Err()
+	err = resCMD.Err()
+	if err != nil {
+		log.WithError(err).Error("Could not save job")
+		return
+	}
+	return
 }
