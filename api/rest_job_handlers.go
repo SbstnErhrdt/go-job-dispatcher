@@ -356,7 +356,7 @@ func GetJobsHandler(c *gin.Context) {
 	job, err := s.GetLatestJob(instances, uid)
 	if err != nil {
 		// return 204 if there is no new jobs
-		if err == job_dispatcher.NoNewJobs {
+		if err == job_dispatcher.ErrNoNewJobs {
 			c.JSON(204, nil)
 			return
 		}

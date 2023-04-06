@@ -2,7 +2,8 @@ package api
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	log "github.com/sirupsen/logrus"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -33,7 +34,10 @@ func getFromForm(values url.Values) *RequestOptions {
 		// get variables map
 		var variables map[string]interface{}
 		variablesStr := values.Get("variables")
-		json.Unmarshal([]byte(variablesStr), variables)
+		err := json.Unmarshal([]byte(variablesStr), &variables)
+		if err != nil {
+			log.WithError(err).Error("error unmarshalling variables")
+		}
 
 		return &RequestOptions{
 			Query:         query,
@@ -65,7 +69,7 @@ func NewRequestOptions(r *http.Request) *RequestOptions {
 
 	switch contentType {
 	case ContentTypeGraphQL:
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return &RequestOptions{}
 		}
@@ -87,7 +91,7 @@ func NewRequestOptions(r *http.Request) *RequestOptions {
 		fallthrough
 	default:
 		var opts RequestOptions
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			return &opts
 		}
@@ -96,8 +100,8 @@ func NewRequestOptions(r *http.Request) *RequestOptions {
 			// Probably `variables` was sent as a string instead of an object.
 			// So, we try to be polite and try to parse that as a JSON string
 			var optsCompatible requestOptionsCompatibility
-			json.Unmarshal(body, &optsCompatible)
-			json.Unmarshal([]byte(optsCompatible.Variables), &opts.Variables)
+			_ = json.Unmarshal(body, &optsCompatible)
+			_ = json.Unmarshal([]byte(optsCompatible.Variables), &opts.Variables)
 		}
 		return &opts
 	}

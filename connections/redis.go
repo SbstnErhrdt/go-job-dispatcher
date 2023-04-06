@@ -11,7 +11,6 @@ import (
 
 var RedisClient *redis.Client
 
-// ConnectToRedis creates a new connection to redis
 func ConnectToRedis() {
 	// check if the necessary sql variables are set
 	env.CheckRequiredEnvironmentVariables(
@@ -23,11 +22,11 @@ func ConnectToRedis() {
 	env.CheckOptionalEnvironmentVariables(
 		"REDIS_PASSWORD",
 	)
-	log.Info("try to connect to redis")
+	log.Println("Try to connect to sql redis")
 	db, err := strconv.Atoi(os.Getenv("REDIS_DATABASE"))
 	if err != nil {
-		log.Println("failed to convert the provided redis db in the environment variable REDIS_DATABASE to an integer")
-		log.Fatal(err)
+		log.Println("Failed to convert the provided redis db in the environment variable REDIS_DATABASE to an integer")
+		panic(err)
 		return
 	}
 	client := redis.NewClient(&redis.Options{
@@ -38,18 +37,17 @@ func ConnectToRedis() {
 	RedisClient = client
 	res := RedisClient.Ping(context.TODO())
 	if res.Err() != nil {
-		log.Fatal(res.Err())
+		panic(res.Err())
 		return
 	}
-	log.Info("successfully connected to redis database")
+	log.Println("Successfully connected to redis database")
 	return
 }
 
-// CloseRedisConnection closes a connection
 func CloseRedisConnection() {
 	err := RedisClient.Close()
 	if err != nil {
-		log.Error("failed to close redis connection")
+		log.Println("Failed to close redis connection")
 		panic(err)
 		return
 	}

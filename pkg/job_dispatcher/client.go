@@ -9,12 +9,14 @@ import (
 	"net/http"
 )
 
+// Client is the client for the job dispatcher
 type Client struct {
-	Endpoint       string
-	UUID           uuid.UUID
-	WorkerInstance string
-	CurrentJob     *Job
-	Bulk           bool
+	Endpoint       string     // endpoint of the job dispatcher
+	UUID           uuid.UUID  // uuid of the client
+	WorkerInstance string     // worker instance
+	CurrentJob     *Job       // current job
+	Bulk           bool       // use bulk endpoint
+	Logger         *log.Entry // logger
 }
 
 // NewClient inits a new client
@@ -30,6 +32,11 @@ func NewClient(endpoint string, workerInstance string, uuid uuid.UUID) Client {
 		UUID:           uuid,
 		WorkerInstance: workerInstance,
 		Bulk:           false,
+		Logger: log.WithFields(log.Fields{
+			"module":          "job_dispatcher",
+			"worker_instance": workerInstance,
+			"endpoint":        endpoint,
+		}),
 	}
 }
 
@@ -53,6 +60,9 @@ func (c *Client) GetEndpoint() string {
 	}
 }
 
+// ErrNo20XStatus is returned if there is no 200 status code
+var ErrNo20XStatus = errors.New("no 20X status")
+
 // GetJob gets the latest job with the highest priority
 func (c *Client) GetJob(additionalInstances []string) (err error) {
 	// create payload
@@ -68,6 +78,7 @@ func (c *Client) GetJob(additionalInstances []string) (err error) {
 	// send request
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(jsonPayload))
 	if err != nil {
+		log.WithError(err).Error("could not create request")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -76,6 +87,7 @@ func (c *Client) GetJob(additionalInstances []string) (err error) {
 	// execute the request and provide the response
 	resp, err := client.Do(req)
 	if err != nil {
+		log.WithError(err).Error("could not execute request")
 		return
 	}
 	// if there is no job
@@ -85,7 +97,10 @@ func (c *Client) GetJob(additionalInstances []string) (err error) {
 		return
 	}
 	if resp.StatusCode > 399 {
-		err = errors.New("no 20X status")
+		err = ErrNo20XStatus
+		log.WithField("statusCode", resp.StatusCode).
+			WithError(err).
+			Error("no 20X status")
 		return
 	}
 	// parse the response
@@ -95,7 +110,9 @@ func (c *Client) GetJob(additionalInstances []string) (err error) {
 		return
 	}
 	// assign the job to the client
-	log.Println("job assigned", jobResponse.Job.Name, jobResponse.Job.UUID.String())
+	log.WithField("jobName", jobResponse.Job.Name).
+		WithField("jobUUID", jobResponse.Job.UUID.String()).
+		Info("job assigned")
 	c.CurrentJob = jobResponse.Job
 	return
 }
@@ -107,16 +124,21 @@ func (c *Client) CreateJob(newJob NewJobDTO) (job *Job, err error) {
 	// send request
 	resp, err := http.Post(c.GetEndpoint(), "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
+		log.WithError(err).Error("could not create request")
 		return
 	}
 	if resp.StatusCode > 399 {
-		err = errors.New("no 20X status")
+		err = ErrNo20XStatus
+		log.WithField("statusCode", resp.StatusCode).
+			WithError(err).
+			Error("no 20X status")
 		return
 	}
 	response := ResponseDTO{}
 	// parse response
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
+		log.WithError(err).Error("could not parse response")
 		return
 	}
 	return response.Job, nil
@@ -129,25 +151,33 @@ func (c *Client) CreateJobs(newJobs []NewJobDTO) (results []*Job, err error) {
 	// send request
 	resp, err := http.Post(c.GetEndpoint()+"/bulk", "application/json", bytes.NewBuffer(jsonPayload))
 	if err != nil {
+		log.WithError(err).Error("could not create request")
 		return
 	}
 	if resp.StatusCode > 399 {
-		err = errors.New("no 20X status")
+		err = ErrNo20XStatus
+		log.WithField("statusCode", resp.StatusCode).
+			WithError(err).
+			Error("no 20X status")
 		return
 	}
 	response := ResponseMultipleDTO{}
 	// parse response
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
+		log.WithError(err).Error("could not parse response")
 		return
 	}
 	return response.Jobs, nil
 }
 
+var ErrNoJobSet = errors.New("no current job set")
+
 // sendReq is a helper function that sends http put req to different endpoints
 func (c *Client) sendReq(reqType string) (err error) {
 	if c.CurrentJob == nil {
-		return errors.New("no current job set")
+		err = ErrNoJobSet
+		return
 	}
 	// marshal payload
 	// build url with uuid of the worker
@@ -155,6 +185,7 @@ func (c *Client) sendReq(reqType string) (err error) {
 	// send request
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(nil))
 	if err != nil {
+		log.WithError(err).Error("could not create request")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -163,16 +194,21 @@ func (c *Client) sendReq(reqType string) (err error) {
 	// execute the request and provide the response
 	resp, err := client.Do(req)
 	if err != nil {
+		log.WithError(err).Error("could not execute request")
 		return
 	}
 	if resp.StatusCode > 399 {
-		err = errors.New("no 20X status")
+		err = ErrNo20XStatus
+		log.WithField("statusCode", resp.StatusCode).
+			WithError(err).
+			Error("no 20X status")
 		return
 	}
 	response := ResponseDTO{}
 	// parse response
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
+		log.WithError(err).Error("could not parse response")
 		return
 	}
 	// assign job
@@ -191,10 +227,12 @@ func (c *Client) HeartBeat(status map[string]interface{}) (err error) {
 	// send request
 	payload, err := json.Marshal(status)
 	if err != nil {
+		log.WithError(err).Error("could not marshal payload")
 		return
 	}
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(payload))
 	if err != nil {
+		log.WithError(err).Error("could not create request")
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -203,16 +241,18 @@ func (c *Client) HeartBeat(status map[string]interface{}) (err error) {
 	// execute the request and provide the response
 	resp, err := client.Do(req)
 	if err != nil {
+		log.WithError(err).Error("could not execute request")
 		return
 	}
 	if resp.StatusCode > 399 {
-		err = errors.New("no 20X status")
+		err = ErrNo20XStatus
 		return
 	}
 	response := ResponseDTO{}
 	// parse response
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
+		log.WithError(err).Error("could not parse response")
 		return
 	}
 	// assign job
@@ -222,13 +262,19 @@ func (c *Client) HeartBeat(status map[string]interface{}) (err error) {
 
 // StartCurrentJob marks the current job as started
 func (c *Client) StartCurrentJob() (err error) {
-	return c.sendReq("start")
+	err = c.sendReq("start")
+	if err != nil {
+		log.WithError(err).Error("could not mark job as started")
+		return err
+	}
+	return
 }
 
 // MarkCurrentJobAsCompleted marks the current job as completed
 func (c *Client) MarkCurrentJobAsCompleted() (err error) {
 	err = c.sendReq("complete")
 	if err != nil {
+		log.WithError(err).Error("could not mark job as completed")
 		return err
 	}
 	// set current job to nil
@@ -240,6 +286,7 @@ func (c *Client) MarkCurrentJobAsCompleted() (err error) {
 func (c *Client) ReleaseCurrentJob() (err error) {
 	err = c.sendReq("release")
 	if err != nil {
+		log.WithError(err).Error("could not release job")
 		return err
 	}
 	// set current job to nil

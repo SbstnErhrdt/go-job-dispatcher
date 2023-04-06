@@ -25,7 +25,7 @@ func cleanSql() {
 	s := sql_job_dispatcher.SqlService{}
 	err := s.Clean()
 	if err != nil {
-		log.Fatal("can not run procedure: err: ", err)
+		log.WithError(err).Fatal("can not run clean sql procedure")
 	}
 	connections.CloseSQLConnection()
 	log.Info("sql clean done")
@@ -36,7 +36,7 @@ func cleanRedis() {
 	s := redis_job_dispatcher.RedisService{}
 	err := s.Clean()
 	if err != nil {
-		log.Fatal("can not run procedure: err: ", err)
+		log.WithError(err).Fatal("can not run clean redis procedure")
 	}
 	connections.CloseRedisConnection()
 	log.Info("redis clean done")

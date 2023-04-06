@@ -5,35 +5,17 @@ import (
 	"github.com/SbstnErhrdt/go-job-dispatcher/pkg/sql_job_dispatcher"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func InitServer() {
-	log.Println("try to init server")
+	log.Println("Try to init server")
 	r := InitServerEngine()
 	_ = r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
-	log.Println("server successfully initialize")
-}
-
-func InitBackgroundJobs() {
-	sql := sql_job_dispatcher.SqlService{}
-	redis := redis_job_dispatcher.RedisService{}
-	for {
-		log.Info("clean up expired jobs")
-		errSQL := sql.Clean()
-		if errSQL != nil {
-			log.Fatal("can not clean sql ", errSQL)
-		}
-		errRedis := redis.Clean()
-		if errRedis != nil {
-			log.Fatal("can not clean redis ", errRedis)
-		}
-		time.Sleep(time.Minute * 5)
-	}
+	log.Println("Server successfully initialize")
 }
 
 func InitServerEngine() (r *gin.Engine) {
-	log.Println("try to init router")
+	log.Info("Try to init router")
 	// init router
 	r = gin.Default()
 	// add the cors middleware
@@ -83,6 +65,6 @@ func InitServerEngine() (r *gin.Engine) {
 		// Stats
 		bulkJobs.GET("/stats", ReadStatsJobHandler)
 	}
-	log.Println("router successfully initialize")
+	log.Info("Router successfully initialize")
 	return
 }

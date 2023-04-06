@@ -17,8 +17,6 @@ func main() {
 	connections.ConnectToRedis()
 	// migrate to the latest data structure
 	migrations.Run()
-	// start the background cleaning job
-	go api.InitBackgroundJobs()
 	// init the api server
 	api.InitServer()
 	log.Info("Job dispatcher started")

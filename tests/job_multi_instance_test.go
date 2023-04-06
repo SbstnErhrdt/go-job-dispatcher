@@ -49,7 +49,7 @@ func TestStartJobMultiInstance(t *testing.T) {
 
 	time.Sleep(time.Second * 2)
 
-	// check in the database if the job is also not assigend
+	// check in the database if the job is also not assigned
 	var dbJob job_dispatcher.Job
 	if Client.Bulk {
 		// retrieve job from redis
@@ -84,7 +84,7 @@ func TestStartJobMultiInstance(t *testing.T) {
 	}
 	ass.NotNil(dbJob.CompletedAt)
 
-	// gets the next job job
+	// gets the next job
 	// this one has a lower priority
 	err = Client.GetJob([]string{"test2"})
 	ass.NoError(err)
