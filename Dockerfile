@@ -5,7 +5,7 @@ FROM alpine:latest as certs
 RUN apk --update add ca-certificates
 
 ### build go app
-FROM golang:1.16-alpine as builder
+FROM golang:1.19-alpine as builder
 RUN apk add --no-cache gcc musl-dev
 RUN mkdir /build
 WORKDIR /build
