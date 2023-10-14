@@ -118,6 +118,7 @@ func (m *SqlService) GetLatestJob(workerInstances []string,
 			WHERE worker_instance IN ? 
 			AND completed_at IS NULL
 			AND current_worker_uid IS NULL
+		    AND attempts < 30
 			ORDER BY priority DESC, attempts ASC
 			LIMIT 1
 		) as w2		

@@ -157,7 +157,7 @@ func StartJobHandler(c *gin.Context) {
 	// get the job
 	job, err := getJob(c)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
@@ -165,7 +165,7 @@ func StartJobHandler(c *gin.Context) {
 	}
 	err = s.Start(job)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
@@ -195,7 +195,7 @@ func HeartBeatJobHandler(c *gin.Context) {
 	// parse the payload
 	err := c.BindJSON(&payload)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
@@ -203,7 +203,7 @@ func HeartBeatJobHandler(c *gin.Context) {
 	}
 	job, err := getJob(c)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
@@ -211,7 +211,7 @@ func HeartBeatJobHandler(c *gin.Context) {
 	}
 	err = s.HeartBeat(job, payload)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
@@ -219,7 +219,7 @@ func HeartBeatJobHandler(c *gin.Context) {
 	}
 	job, err = getJob(c)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(500, gin.H{
 			"err": "can not start job",
 		})
@@ -240,7 +240,7 @@ func ReleaseJobHandler(c *gin.Context) {
 	// get the job
 	job, err := getJob(c)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
@@ -248,7 +248,7 @@ func ReleaseJobHandler(c *gin.Context) {
 	}
 	err = s.Release(job)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
@@ -275,7 +275,7 @@ func CompleteJobHandler(c *gin.Context) {
 	s := getService(c)
 	job, err := getJob(c)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
@@ -283,7 +283,7 @@ func CompleteJobHandler(c *gin.Context) {
 	}
 	err = s.Complete(job)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		c.JSON(400, gin.H{
 			"err": err,
 		})
